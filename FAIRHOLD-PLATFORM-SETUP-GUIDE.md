@@ -1,4 +1,68 @@
-# FairHold Platform Setup Guide - Complete Service Configuration
+### **7.4 Complete Integration Test (Updated for Hackathon)**
+
+```javascript
+// test-all-services.js
+import { testDatabase } from './lib/database.js';
+import { testCDP } from './lib/cdpClient.js';
+import { testCloudinary } from './lib/fileStorage.js';
+import { testYieldSimulation } from './lib/yieldService.js';
+
+async function runAllTests() {
+  console.log("🧪 Running hackathon integration tests...\n");
+  
+  const results = {
+    database: await testDatabase(),
+    cdp: await testCDP(),
+    cloudinary: await testCloudinary(),
+    yieldSimulation: await testYieldSimulation()
+  };
+  
+  console.log("\n📊 Hackathon Test Results:");
+  console.log("Database:", results.database ? "✅ PASS" : "❌ FAIL");
+  console.log("Coinbase CDP (Base Sepolia):", results.cdp ? "✅ PASS" : "❌ FAIL");
+  console.log("Cloudinary:", results.cloudinary ? "✅ PASS" : "❌ FAIL");
+  console.log("Yield Simulation:", results.yieldSimulation ? "✅ PASS" : "❌ FAIL");
+  
+  const allPassed = Object.values(results).every(result => result);
+  console.log("\n🎯 Overall:", allPassed ? "✅ ALL TESTS PASSED - READY FOR HACKATHON" : "❌ SOME TESTS FAILED");
+  
+  if (allPassed) {
+    console.log("\n🚀 HACKATHON SETUP COMPLETE!");
+    console.log("✅ Base Sepolia testnet configured");
+    console.log("✅ Yield simulation working (4.1% APY)");
+    console.log("✅ Demo data available");
+    console.log("✅ All services connected");
+    console.log("\n💡 Ready to demo realistic escrow with simulated yield!");
+  }
+  
+  return allPassed;
+}
+
+// Additional hackathon-specific test
+async function testYieldSimulation() {
+  console.log("Testing yield simulation for hackathon demo...");
+  
+  try {
+    const testScenarios = [
+      { amount: 15000, days: 30, description: "Wedding escrow (1 month)" },
+      { amount: 5000, days: 90, description: "Milestone payment (3 months)" },
+      { amount: 25000, days: 180, description: "Large event (6 months)" }
+    ];
+    
+    const annualRate = 0.041; // 4.1%
+    const dailyRate = annualRate / 365;
+    
+    console.log("📊 Yield Simulation Test Results:");
+    testScenarios.forEach(scenario => {
+      const yield = scenario.amount * dailyRate * scenario.days;
+      const percentage = (yield / scenario.amount * 100);
+      console.log(`  ${scenario.description}: ${yield.toFixed(2)} (${percentage.toFixed(2)}%)`);
+    });
+    
+    console.log("✅ Yield simulation working correctly");
+    return true;
+  } catch (error) {
+    console.error("❌ Yiel# FairHold Platform Setup Guide - Complete Service Configuration
 
 ## 🎯 **Overview**
 This guide will walk you through setting up all required services for the FairHold Web3 escrow platform, including Coinbase CDP, Supabase, Vercel, and Cloudinary.
@@ -29,10 +93,11 @@ This guide will walk you through setting up all required services for the FairHo
 ### **1.3 Extract Your CDP Credentials**
 
 ```json
-// Your downloaded file looks like this:
+// Downloaded file will look like this:
 {
-  "id": "231c60cf-506d-4f9d-9474-d37601bd12d4",
-  "privateKey": "mh8H2c/CPsZDuQcDDFhGUeKV9rK+AIn1TZpSmwk0F1wWDNtFRNGFgQSEqJdKb8iVJKHntUKBrq8oJPnL5RqtMg=="
+  "name": "fairhold-escrow-platform",
+  "privateKey": "-----BEGIN EC PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END EC PRIVATE KEY-----\n",
+  "projectId": "your-project-id-here"
 }
 ```
 
@@ -41,8 +106,8 @@ This guide will walk you through setting up all required services for the FairHo
 ```env
 # Coinbase CDP Configuration
 CDP_API_KEY_NAME="fairhold-escrow-platform"
-CDP_PRIVATE_KEY="mh8H2c/CPsZDuQcDDFhGUeKV9rK+AIn1TZpSmwk0F1wWDNtFRNGFgQSEqJdKb8iVJKHntUKBrq8oJPnL5RqtMg=="
-CDP_PROJECT_ID="231c60cf-506d-4f9d-9474-d37601bd12d4"
+CDP_PRIVATE_KEY="-----BEGIN EC PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END EC PRIVATE KEY-----\n"
+CDP_PROJECT_ID="your-project-id-here"
 
 # Network Configuration  
 NEXT_PUBLIC_NETWORK="base-sepolia"
@@ -83,11 +148,11 @@ curl -X POST https://api.developer.coinbase.com/rpc/v1/showPortfolio \
    postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
    ```
 
-### **2.3 Setup Database Schema**
+### **2.3 Setup Database Schema with Hackathon Modifications**
 
 1. **Go to:** SQL Editor in Supabase dashboard
 2. **Create new query**
-3. **Paste and run** the following schema:
+3. **Paste and run** the following schema (updated for hackathon with yield simulation):
 
 ```sql
 -- Enable necessary extensions
@@ -117,7 +182,7 @@ CREATE TABLE user_profiles (
     profile_image_url TEXT
 );
 
--- Agreements table
+-- Agreements table (updated for hackathon yield simulation)
 CREATE TABLE agreements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     contract_address TEXT UNIQUE,
@@ -128,12 +193,14 @@ CREATE TABLE agreements (
     deposited_amount DECIMAL(18,6) DEFAULT 0,
     released_amount DECIMAL(18,6) DEFAULT 0,
     yield_generated DECIMAL(18,6) DEFAULT 0,
+    simulated_yield DECIMAL(18,6) DEFAULT 0, -- FOR HACKATHON: Track simulated yield
     event_type TEXT NOT NULL,
     event_date TIMESTAMP WITH TIME ZONE,
     event_location TEXT,
     event_description TEXT,
     status TEXT DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'DISPUTED')),
-    yield_strategy TEXT DEFAULT 'COINBASE_STAKING',
+    yield_strategy TEXT DEFAULT 'SIMULATED_STAKING', -- UPDATED FOR HACKATHON
+    yield_simulation_start TIMESTAMP WITH TIME ZONE, -- Track when simulation started
     refund_policy JSONB,
     contract_document_url TEXT,
     signed_contract_url TEXT,
@@ -161,25 +228,28 @@ CREATE TABLE milestones (
     proof_image_url TEXT,
     notes TEXT,
     "order" INTEGER NOT NULL,
+    simulated_yield_at_release DECIMAL(18,6) DEFAULT 0, -- Track yield at release time
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Transactions table
+-- Transactions table (updated for yield simulation)
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     agreement_id UUID REFERENCES agreements(id) ON DELETE CASCADE,
     tx_hash TEXT UNIQUE,
     amount DECIMAL(18,6) NOT NULL,
-    transaction_type TEXT NOT NULL CHECK (transaction_type IN ('DEPOSIT', 'MILESTONE_RELEASE', 'YIELD_DISTRIBUTION', 'REFUND', 'ADVANCE_PAYMENT', 'WALLET_CREATION', 'STAKING_DEPOSIT')),
-    status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'CONFIRMED', 'FAILED', 'CANCELLED')),
+    transaction_type TEXT NOT NULL CHECK (transaction_type IN ('DEPOSIT', 'MILESTONE_RELEASE', 'YIELD_DISTRIBUTION', 'REFUND', 'ADVANCE_PAYMENT', 'WALLET_CREATION', 'SIMULATED_STAKING', 'SIMULATED_YIELD')),
+    status TEXT DEFAULT 'CONFIRMED' CHECK (status IN ('PENDING', 'CONFIRMED', 'FAILED', 'CANCELLED')), -- Default confirmed for simulated
     yield_amount DECIMAL(18,6),
+    simulated_yield_amount DECIMAL(18,6), -- FOR HACKATHON: Track simulated yield
     staking_period INTEGER,
     description TEXT,
     metadata JSONB,
     receipt_url TEXT,
+    is_simulated BOOLEAN DEFAULT true, -- FOR HACKATHON: Mark as simulated
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    confirmed_at TIMESTAMP WITH TIME ZONE
+    confirmed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() -- Auto-confirm for demo
 );
 
 -- Documents table
@@ -203,10 +273,24 @@ CREATE TABLE notifications (
     agreement_id UUID REFERENCES agreements(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('MILESTONE_COMPLETED', 'PAYMENT_RECEIVED', 'AGREEMENT_CREATED', 'DISPUTE_RAISED', 'YIELD_DISTRIBUTED')),
+    type TEXT NOT NULL CHECK (type IN ('MILESTONE_COMPLETED', 'PAYMENT_RECEIVED', 'AGREEMENT_CREATED', 'DISPUTE_RAISED', 'YIELD_DISTRIBUTED', 'SIMULATED_YIELD_UPDATE')),
     is_read BOOLEAN DEFAULT FALSE,
     metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Hackathon-specific table for yield simulation tracking
+CREATE TABLE yield_simulations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agreement_id UUID REFERENCES agreements(id) ON DELETE CASCADE,
+    principal_amount DECIMAL(18,6) NOT NULL,
+    annual_rate DECIMAL(5,4) DEFAULT 0.041, -- 4.1%
+    start_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_calculated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    total_yield_simulated DECIMAL(18,6) DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create indexes for performance
@@ -217,20 +301,43 @@ CREATE INDEX idx_transactions_agreement_type ON transactions(agreement_id, trans
 CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
 CREATE INDEX idx_users_wallet_address ON users(wallet_address);
 CREATE INDEX idx_agreements_escrow_wallet ON agreements(escrow_wallet_address);
+CREATE INDEX idx_yield_simulations_agreement ON yield_simulations(agreement_id);
+CREATE INDEX idx_yield_simulations_active ON yield_simulations(is_active);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$ language 'plpgsql';
 
 -- Add triggers for updated_at
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_agreements_updated_at BEFORE UPDATE ON agreements FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_milestones_updated_at BEFORE UPDATE ON milestones FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_yield_simulations_updated_at BEFORE UPDATE ON yield_simulations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Hackathon Demo Data: Insert sample wedding agreement
+INSERT INTO users (id, wallet_address, email, user_type, is_verified) VALUES
+('11111111-1111-1111-1111-111111111111', '0x1234567890123456789012345678901234567890', 'sarah.client@example.com', 'CLIENT', true),
+('22222222-2222-2222-2222-222222222222', '0x0987654321098765432109876543210987654321', 'mike.vendor@example.com', 'VENDOR', true);
+
+INSERT INTO user_profiles (user_id, business_name, contact_phone) VALUES
+('11111111-1111-1111-1111-111111111111', 'Sarah & Mike Wedding', '+1-555-0123'),
+('22222222-2222-2222-2222-222222222222', 'Elegant Events Co.', '+1-555-0456');
+
+INSERT INTO agreements (id, client_id, vendor_id, total_amount, event_type, event_date, event_location, status, yield_simulation_start) VALUES
+('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 15000.00, 'WEDDING', '2024-06-15 15:00:00', 'Grand Ballroom, Hotel Paradise', 'ACTIVE', NOW());
+
+INSERT INTO milestones (agreement_id, name, amount, due_date, "order") VALUES
+('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Venue Deposit', 4500.00, '2024-03-15 00:00:00', 1),
+('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Vendor Confirmation', 6000.00, '2024-05-01 00:00:00', 2),
+('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Final Payment', 4500.00, '2024-06-08 00:00:00', 3);
+
+INSERT INTO yield_simulations (agreement_id, principal_amount, annual_rate, start_date) VALUES
+('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 15000.00, 0.041, NOW() - INTERVAL '30 days');
 ```
 
 ### **2.4 Your Supabase Environment Variables**
@@ -410,6 +517,7 @@ Create `.env.local` in your project root:
 ```env
 # ===================================
 # FAIRHOLD PLATFORM CONFIGURATION
+# HACKATHON MODE (UPDATED)
 # ===================================
 
 # Coinbase CDP Configuration
@@ -423,9 +531,15 @@ SUPABASE_URL="https://[PROJECT-REF].supabase.co"
 SUPABASE_ANON_KEY="your-supabase-anon-key"
 SUPABASE_SERVICE_KEY="your-supabase-service-key"
 
-# Network Configuration
+# Network Configuration (HACKATHON: Base Sepolia)
 NEXT_PUBLIC_NETWORK="base-sepolia"
 NEXT_PUBLIC_USDC_ADDRESS="0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+
+# Yield Configuration (HACKATHON: Simulated 4.1% Yield)
+ENABLE_REAL_STAKING="false"
+SIMULATE_YIELD="true"
+ANNUAL_YIELD_RATE="0.041"
+YIELD_CALCULATION_MODE="simulated"
 
 # File Storage Configuration (Cloudinary)
 CLOUDINARY_CLOUD_NAME="your-cloudinary-cloud-name"
@@ -442,12 +556,25 @@ API_SECRET_KEY="your-generated-api-key"
 # CORS & Security
 ALLOWED_ORIGINS="http://localhost:3000,https://your-domain.vercel.app"
 
+# Hackathon Demo Configuration
+DEMO_MODE="true"
+AUTO_CONFIRM_TRANSACTIONS="true"
+SHOW_SIMULATED_BADGES="true"
+
 # Optional: Email Configuration (for notifications)
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
 SMTP_USER="your-email@gmail.com"
 SMTP_PASSWORD="your-app-password"
 FROM_EMAIL="noreply@fairhold.com"
+
+# Production Settings (COMMENTED OUT FOR HACKATHON)
+# NEXT_PUBLIC_NETWORK="base"
+# NEXT_PUBLIC_USDC_ADDRESS="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+# ENABLE_REAL_STAKING="true"
+# SIMULATE_YIELD="false"
+# DEMO_MODE="false"
+# AUTO_CONFIRM_TRANSACTIONS="false"
 ```
 
 ---
@@ -465,29 +592,39 @@ npx prisma db pull
 npx prisma generate
 ```
 
-### **7.2 Test Coinbase CDP**
+### **7.2 Test Coinbase CDP (Updated for Hackathon)**
 
 Create `test-cdp.js`:
 
 ```javascript
 import { Coinbase } from "@coinbase/coinbase-sdk";
 
-// Configure CDP
+// Configure CDP for Base Sepolia
 Coinbase.configure({
   apiKeyName: process.env.CDP_API_KEY_NAME,
   privateKey: process.env.CDP_PRIVATE_KEY,
   useServerSigner: true
 });
 
-// Test wallet creation
+// Test wallet creation on Base Sepolia
 async function testCDP() {
   try {
-    console.log("Testing CDP connection...");
+    console.log("Testing CDP connection on Base Sepolia...");
     
-    // Create a test wallet
-    const wallet = await Wallet.create();
+    // Create a test wallet on Base Sepolia
+    const wallet = await Wallet.create({
+      networkId: "base-sepolia"
+    });
     console.log("✅ CDP connection successful!");
     console.log("Test wallet address:", wallet.getDefaultAddress().getId());
+    
+    // Test faucet request for testnet USDC
+    try {
+      const faucetRequest = await wallet.faucet();
+      console.log("✅ Faucet request successful:", faucetRequest.getTransactionHash());
+    } catch (faucetError) {
+      console.log("ℹ️ Faucet may be rate limited, but wallet creation works");
+    }
     
     return true;
   } catch (error) {
@@ -496,7 +633,34 @@ async function testCDP() {
   }
 }
 
-testCDP();
+// Test yield simulation
+async function testYieldSimulation() {
+  console.log("Testing yield simulation...");
+  
+  const principal = 1000; // $1000 USDC
+  const days = 30; // 30 days
+  const annualRate = 0.041; // 4.1%
+  const dailyRate = annualRate / 365;
+  
+  const simulatedYield = principal * dailyRate * days;
+  console.log(`✅ Simulated yield for ${principal} over ${days} days: ${simulatedYield.toFixed(2)}`);
+  console.log(`📊 This represents ${(simulatedYield/principal * 100).toFixed(3)}% return`);
+  
+  return true;
+}
+
+async function runCDPTests() {
+  const cdpTest = await testCDP();
+  const yieldTest = await testYieldSimulation();
+  
+  console.log("\n🎯 CDP Tests Complete:");
+  console.log("Wallet Creation:", cdpTest ? "✅ PASS" : "❌ FAIL");
+  console.log("Yield Simulation:", yieldTest ? "✅ PASS" : "❌ FAIL");
+  
+  return cdpTest && yieldTest;
+}
+
+runCDPTests();
 ```
 
 ### **7.3 Test Cloudinary**

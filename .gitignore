@@ -8,6 +8,7 @@
 # API Keys - IMPORTANT
 # Do not commit your API keys.
 helper-docs/cdp_api_key.json
+cdp_api_key.json
 
 # Logs
 npm-debug.log*

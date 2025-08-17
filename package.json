@@ -1,0 +1,36 @@
+{
+  "name": "fairhold-escrow-platform",
+  "version": "1.0.0",
+  "description": "Web3 escrow platform with yield generation",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test-cdp": "node test-cdp.js"
+  },
+  "dependencies": {
+    "@coinbase/coinbase-sdk": "^0.11.0",
+    "dotenv": "^16.4.5",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.4"
+  },
+  "keywords": [
+    "web3",
+    "escrow",
+    "coinbase",
+    "blockchain",
+    "yield"
+  ],
+  "author": "FairHold Team",
+  "license": "MIT"
+}
