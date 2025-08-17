@@ -9,10 +9,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test-cdp": "node test-cdp.js"
+    "test": "node tests/run-all-tests.js",
+    "test:all": "node tests/run-all-tests.js",
+    "test:cdp": "node tests/test-cdp.js",
+    "test:database": "node tests/test-database.js",
+    "test:storage": "node tests/test-cloudinary.js",
+    "test:yield": "node tests/test-yield-simulation.js"
   },
   "dependencies": {
     "@coinbase/coinbase-sdk": "^0.11.0",
+    "@supabase/supabase-js": "^2.55.0",
+    "cloudinary": "^2.7.0",
     "dotenv": "^16.4.5",
     "next": "^14.2.5",
     "react": "^18.3.1",
